@@ -1,8 +1,9 @@
 language: node_js
+node_js:
+  - "6.7"
 services:
   - redis-server
 sudo: required
-dist: trusty
 before_install:
  - export CHROME_BIN=/usr/bin/google-chrome
  - export DISPLAY=:99.0
@@ -13,11 +14,18 @@ before_install:
  - sudo dpkg -i google-chrome*.deb
 install:
   - npm install;
-     npm install travis-github-lint-status;
+  - npm install travis-github-lint-status;
 script:
-  - eval $CMD
+  - if [[ "$SAUCE_USERNAME" == "" ]]; then
+      eval $CMD;
+    else
+      if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+        mv config/config-ci.json config/config.json && npm run regression-test;
+      fi
+    fi
 env:
   - CMD="./node_modules/travis-github-lint-status/index.js"
-  - CMD="npm run test" TB_API_SECRET=123 TB_API_KEY=123
+  - CMD="npm run test && bash <(curl -s https://codecov.io/bash)" TB_API_KEY=123 TB_API_SECRET=123
+  - SAUCE_USERNAME=opentok
 addons:
   firefox: "latest"
